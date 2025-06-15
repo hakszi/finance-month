@@ -3,28 +3,105 @@ import numpy as np
 import squarify
 import matplotlib.pyplot as plt
 import seaborn as sns
+from pprint import pprint
 
-df = pd.read_csv('data.csv', sep=',', header='infer')
-df['Date'] = pd.to_datetime(df['Date'])
-df.sort_values('Date', inplace=True)
-print(df['Date'].dt.day)
+def main():
+    df = pd.read_csv('data.csv', sep=',', header='infer')
+    df['Date'] = pd.to_datetime(df['Date'])
+    #df.sort_values('Date', inplace=True)
+
+    df['Month'] = df['Date'].dt.to_period('M')
+    monthly_categories = df.groupby(['Month', 'Category'], as_index=False)['Value'].sum()
+    monthly_categories = monthly_categories.rename(columns={'Month':'Date'})
+    monthly_categories['Date'] = monthly_categories['Date'].dt.to_timestamp(how='start')
+
+    y = year_df(monthly_categories,2025)
+    #y = fill_empty_dates(y)
+
+    fig, axes = plt.subplots(nrows=4,
+                             ncols=3,
+                             figsize=(10, 10),
+                             dpi=100)
 
 
-# byDays = df.groupby(['Date', 'Category'], as_index=False)['Value'].sum()
-df['Month'] = df['Date'].dt.to_period('M')
-monthly = df.groupby('Month', as_index=False)['Value'].sum()
-monthly_categories = df.groupby(['Month', 'Category'], as_index=False)['Value'].sum()
+    visualize(y, fig, axes)
 
-m = sorted(set(monthly_categories['Month']))[-1]
 
-filtered = monthly_categories[monthly_categories['Month'] == '2025-05']
+def year_df(df, year):
+    return df[pd.to_datetime(df['Date']).dt.year == year]
 
-colors=['#fae588','#f79d65','#f9dc5c','#e8ac65','#e76f51','#ef233c','#b7094c'] #color palette
 
-sns.set_style(style="whitegrid") # set seaborn plot style
-sizes= filtered["Value"].values# proportions of the categories
-label=filtered["Category"]
-squarify.plot(sizes=sizes, label=label, alpha=0.6,color=colors).set(title=f'{m}')
-plt.axis('off')
-plt.show()
+def month_df(df, year, month):
+    return df[(pd.to_datetime(df['Date']).dt.year == year)
+              & (pd.to_datetime(df['Date']).dt.month == month)]
 
+
+def label_months(ax, date, i):
+    month_labels = np.array(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+                             'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+    months = np.array([d.month for d in date])  # store available month names from provided dataframe
+    uniq_months = sorted(set(months))  # store month names uniquely, non-repetitively
+    yticks = [np.median(i[months == m]) for m in uniq_months]  # places the month name in the middle of the axis? maybe.
+    labels = [month_labels[m - 1] for m in uniq_months]  # no idea
+    ax.set(yticks=yticks)
+    ax.set_yticklabels(labels, rotation=90, fontsize=12)
+
+
+def split_year(y):
+    min_y = min(sorted(set(y['Date'].dt.month)))  # first day of the given month
+    max_y = max(sorted(set(y['Date'].dt.month)))  # last day of the given month
+    m = []
+    for i in range(min_y, max_y + 1):  # put each month into a list, later to iterate through and plot one-by-one
+        m_tmp = month_df(y, y['Date'].dt.year, i)
+        m.append(m_tmp)
+    return m
+
+def fill_empty_dates(df):
+    start = df['Date'].min() - pd.offsets.YearBegin(1)
+    end = df['Date'].max() + pd.offsets.YearEnd(1)
+    r = pd.date_range(start, end)
+
+    return (df.set_index('Date')
+            .reindex(r)
+            .fillna({'Value': -1})
+            .reset_index()
+            .rename(columns={'index': 'Date'}))
+
+
+def visualize(df, fig, axes):
+    y_split = split_year(df)
+
+    year = sorted(set(y_split[0]['Date'].dt.year))
+
+    fig.subplots_adjust(top=0.95)
+    #fig.suptitle(f'TITLEEEEEEEEEEE ({year[0]})', fontsize=35, y=.99)
+
+
+
+    plt.rcParams.update({  # set font that scale better to high DPI (500)
+        'font.family': 'DejaVu Sans',
+        'text.antialiased': True,
+        'font.weight': 'normal'
+    })
+
+    i = 0
+    for ax in axes.flat:
+        if i < len(y_split):
+            sns.set_style(style="whitegrid")
+            sizes = y_split[i]["Value"].values
+            label = y_split[i]["Category"]
+            squarify.plot(sizes=sizes, label=label, alpha=0.6, ax=ax)
+            ax.axis('off')
+
+            i += 1
+
+
+    '''
+    ax.set_title(f"{m['Date'].iloc[0].year} - {m['Date'].iloc[0].month}")
+    plt.axis('off')'''
+
+    plt.savefig('output.pdf', dpi=100)  # save the heatmap as pdf for best quality
+    #plt.show()
+
+
+main()
