@@ -3,6 +3,7 @@ import numpy as np
 import squarify
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.cm as cm
 
 
 def main():
@@ -77,12 +78,12 @@ def visualize(df, fig, axes):
                     sizes=sizes,
                     label=label,
                     text_kwargs={'clip_on': True, 'fontsize': 12},
-                    alpha=0.6,
+                    alpha=.8,
                     edgecolor='white',
                     linewidth=1,
+                    color=sns.husl_palette(n_colors=len(label), h=0.05, s=0.7, l=0.6),
                     ax=ax,
                 )
-
 
 
         ax.set_xticks([])
