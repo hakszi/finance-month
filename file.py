@@ -39,9 +39,6 @@ def split_year(y):
     year = y['Date'].dt.year.iloc[0]
     for month in all_months:
         m_tmp = month_df(y, year, month)
-        if m_tmp.empty:
-            month_year = pd.to_datetime(f'{year}-{month:02d}-01')
-            m_tmp = pd.DataFrame({'Category': ['N/A'], 'Value': [0], 'Date': [month_year]})
         m.append(m_tmp)
     return m
 
@@ -64,30 +61,30 @@ def visualize(df, fig, axes):
             month = month.sort_values('Value', ascending=True)
             sizes = month["Value"].values
             label = month["Category"]
-            if label.iloc[0] == 'N/A':
-                title = month["Date"].dt.strftime('%B').iloc[0]
-                ax.text(0.5, 0.5, f'N/A\n{title}', fontsize=20, ha='center', va='center')
+            month_num = i + 1
+            month_name = pd.to_datetime(f'{year}-{month_num:02d}-01').strftime('%B')
+            ax.set_title(
+                month_name,
+                fontsize=16,
+                fontweight='bold',
+            )
+
+            if month.empty:
+                ax.text(0.5, 0.5, 'N/A', fontsize=20, ha='center', va='center')
 
             else:
-                min_label_size = 0.025 * sizes.max()
-                text_labels = [f"{label.iloc[i]}" if sizes[i] > min_label_size else '' for i in range(len(label))]
-
-
                 squarify.plot(
-                     sizes=sizes,
-                     label=text_labels,
-                     text_kwargs={'clip_on': True, 'fontsize': 8},
-                     alpha=0.6,
-                     edgecolor='white',
-                     linewidth=1,
-                     pad=True,
-                     #algorithm='row',
-                     ax=ax,
+                    sizes=sizes,
+                    label=label,
+                    text_kwargs={'clip_on': True, 'fontsize': 12},
+                    alpha=0.6,
+                    edgecolor='white',
+                    linewidth=1,
+                    ax=ax,
                 )
-                ax.set_title(f"{month['Date'].dt.month_name().iloc[0]}",
-                    fontsize=12,
-                    fontweight='bold',
-                )
+
+
+
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
