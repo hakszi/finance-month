@@ -63,28 +63,28 @@ def visualize(df, fig, axes):
             month = y_split[i]
             sizes = month["Value"].values
             label = month["Category"]
-            min_label_size = 1000
             if label.iloc[0] == 'N/A':
                 title = month["Date"].dt.strftime('%B').iloc[0]
                 ax.text(0.5, 0.5, f'N/A\n{title}', fontsize=20, ha='center', va='center')
 
             else:
-                font_sizes = np.clip(6 + (sizes / sizes.max()) * 4, 6, 10).astype(int)
+                min_label_size = 0.025 * sizes.max()
                 text_labels = [f"{label.iloc[i]}" if sizes[i] > min_label_size else '' for i in range(len(label))]
 
-                sns.set_style(style="whitegrid")
-                squarify.plot(sizes=sizes,
-                              label=text_labels,
-                              text_kwargs={'clip_on': True, 'fontsize': 8},
-                              alpha=0.6,
-                              ax=ax,
-                              edgecolor='white',
-                              linewidth=1, pad=True
-                              )
+                squarify.plot(
+                     sizes=sizes,
+                     label=text_labels,
+                     text_kwargs={'clip_on': True, 'fontsize': 8},
+                     alpha=0.6,
+                     edgecolor='white',
+                     linewidth=1,
+                     pad=True,
+                     ax=ax,
+                )
                 ax.set_title(f"{month['Date'].dt.month_name().iloc[0]}",
-                             fontsize=12,
-                             fontweight='bold',
-                             )
+                    fontsize=12,
+                    fontweight='bold',
+                )
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
