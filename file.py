@@ -3,7 +3,7 @@ import numpy as np
 import squarify
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib.cm as cm
+from itertools import product
 
 
 def main():
@@ -91,29 +91,27 @@ def visualize(df, fig, axes):
                     rect_ext = rect.get_window_extent()
                     rect_width, rect_height = rect_ext.width, rect_ext.height
 
-                    txt.set_rotation(90 if rect_width < rect_height / 2 else 0 if rect_height < rect_width / 2 else txt.get_rotation())
-
+                    rotation = 90 if rect_width < rect_height / 2 else 0 if rect_height < rect_width / 2 else txt.get_rotation()
+                    txt.set_rotation(rotation)
                     txt.set_fontsize(14)
                     fig.canvas.draw()
-                    if txt.get_window_extent().width <= rect_width * buffer_factor and txt.get_window_extent().height <= rect_height * buffer_factor:
+
+                    current_extent = txt.get_window_extent()
+                    if current_extent.width <= rect_width * buffer_factor and current_extent.height <= rect_height * buffer_factor:
                         continue
 
                     original = txt.get_text()
-                    txt_unfitted = True
-
-                    for trunc_length, size in [(t, s) for t in [6, 5, 4, 3] for s in [14, 12, 10]]:
+                    for trunc_length, size in product([6, 5, 4, 3], [14, 12, 10]):
                         if trunc_length >= len(original):
                             continue
-
                         txt.set_text(original[:trunc_length] + '.')
                         txt.set_fontsize(size)
                         fig.canvas.draw()
-
-                        if txt.get_window_extent().width <= rect_width * buffer_factor and txt.get_window_extent().height <= rect_height * buffer_factor:
-                            txt_unfitted = False
+                        current_extent = txt.get_window_extent()
+                        if current_extent.width <= rect_width * buffer_factor and current_extent.height <= rect_height * buffer_factor:
                             break
-
-                    txt.set_visible(not txt_unfitted)
+                    else:
+                        txt.set_visible(False)
 
         ax.set_xticks([])
         ax.set_yticks([])
