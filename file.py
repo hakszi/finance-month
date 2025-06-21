@@ -7,7 +7,7 @@ from itertools import product
 
 
 def main():
-    df = pd.read_csv('data.csv', sep=',', header='infer')
+    df = pd.read_csv('data.csv')
     df['Date'] = pd.to_datetime(df['Date'])
 
     df['Month'] = df['Date'].dt.to_period('M')
@@ -15,33 +15,28 @@ def main():
     monthly_categories = monthly_categories.rename(columns={'Month': 'Date'})
     monthly_categories['Date'] = monthly_categories['Date'].dt.to_timestamp(how='start')
 
-    y = year_df(monthly_categories, 2024)
-
-
+    y = year_df(monthly_categories, 2023)
 
     fig, axes = plt.subplots(nrows=4,
                              ncols=3,
                              figsize=(25, 25),
-                             dpi=100)
+                             dpi=500)
 
     visualize(y, fig, axes)
-    plt.close(fig)
 
 
 def year_df(df, year):
     return df[df['Date'].dt.year == year]
 
 
-def month_df(df, year, month):
-    return df[(df['Date'].dt.year == year) & (df['Date'].dt.month == month)]
-
+def month_df(df, month):
+    return df[df['Date'].dt.month == month]
 
 def split_year(y):
     all_months = range(1, 13)
     m = []
-    year = y['Date'].dt.year.iloc[0]
     for month in all_months:
-        m_tmp = month_df(y, year, month)
+        m_tmp = month_df(y, month)
         m.append(m_tmp)
     return m
 
@@ -57,6 +52,11 @@ def visualize(df, fig, axes):
         'text.antialiased': True,
         'font.weight': 'normal'
     })
+
+    all_categories = df['Category'].unique()
+    color_palette = sns.husl_palette(h=0.01, s=0.4, l=0.7, n_colors=len(all_categories))
+    category_color_map = dict(zip(all_categories, color_palette))
+
     i = 0
     for ax in axes.flat:
         if i < len(y_split):
@@ -64,27 +64,24 @@ def visualize(df, fig, axes):
             month = month.sort_values('Value', ascending=True)
             sizes = month["Value"].values
             label = month["Category"]
+            total = f"{(sizes.sum() / 1000).round():.0f} k" if not month.empty else '-'
             month_num = i + 1
             month_name = pd.to_datetime(f'{year}-{month_num:02d}-01').strftime('%B')
-            ax.set_title(
-                month_name,
-                fontsize=16,
-                fontweight='bold',
-            )
+            ax.set_title(f"{month_name}\n{total}", fontsize=16, fontweight='bold')
 
             if month.empty:
                 ax.text(0.5, 0.5, 'N/A', fontsize=20, ha='center', va='center')
-
             else:
+                colors = [category_color_map[cat] for cat in label]
                 squarify.plot(
                     sizes=sizes,
                     label=label,
                     text_kwargs={'clip_on': True, 'fontsize': 14},
-                    alpha=.8,
+                    #alpha=.8,
+                    #pad=True,
                     edgecolor='white',
                     linewidth=1,
-                    color=sns.husl_palette(n_colors=len(label), h=0.05, s=0.7, l=0.6),
-                    #pad=,
+                    color=colors,
                     ax=ax,
                 )
                 fig.canvas.draw()
@@ -120,9 +117,8 @@ def visualize(df, fig, axes):
         ax.set_yticks([])
         for spine in ax.spines.values():
             spine.set_visible(True)
-
         i += 1
-    plt.savefig('output.pdf', dpi=100)
+    plt.savefig('2023.png', dpi=500)
     plt.close()
 
 
