@@ -14,75 +14,85 @@ def main():
     monthly_categories = monthly_categories.rename(columns={'Month': 'Date'})
     monthly_categories['Date'] = monthly_categories['Date'].dt.to_timestamp(how='start')
 
-    y = year_df(monthly_categories, 2024)
+    y = year_df(monthly_categories, 2025)
 
     fig, axes = plt.subplots(nrows=4,
                              ncols=3,
-                             figsize=(15, 15),
+                             figsize=(25, 25),
                              dpi=100)
 
     visualize(y, fig, axes)
+    plt.close(fig)
 
 
 def year_df(df, year):
-    return df[pd.to_datetime(df['Date']).dt.year == year]
+    return df[df['Date'].dt.year == year]
 
 
 def month_df(df, year, month):
-    return df[(pd.to_datetime(df['Date']).dt.year == year)
-              & (pd.to_datetime(df['Date']).dt.month == month)]
+    return df[(df['Date'].dt.year == year) & (df['Date'].dt.month == month)]
 
 
 def split_year(y):
-    all_months = range(1, 13)  # All months from January to December
+    all_months = range(1, 13)
     m = []
-    years = sorted(set(y['Date'].dt.year))  # Get all unique years in the data
-
-    for year in years:
-        for month in all_months:
-            m_tmp = month_df(y, year, month)
-            if m_tmp.empty:
-                # Create a DataFrame with "N/A" for months with no data
-                month_year = pd.to_datetime(f'{year}-{month:02d}-01')  # Create a date for the first of the month
-                m_tmp = pd.DataFrame({'Category': ['N/A'], 'Value': [0], 'Date': [month_year]})
-            m.append(m_tmp)
+    year = y['Date'].dt.year.iloc[0]
+    for month in all_months:
+        m_tmp = month_df(y, year, month)
+        if m_tmp.empty:
+            month_year = pd.to_datetime(f'{year}-{month:02d}-01')
+            m_tmp = pd.DataFrame({'Category': ['N/A'], 'Value': [0], 'Date': [month_year]})
+        m.append(m_tmp)
     return m
 
 
-
-
 def visualize(df, fig, axes):
+    sns.set_style(style="whitegrid")
     y_split = split_year(df)
-
     fig.subplots_adjust(top=0.95)
-
+    year = y_split[0]['Date'].dt.year.iloc[0]
+    fig.suptitle(f'Personal finance ({year})', fontsize=35, y=.99)
     plt.rcParams.update({
         'font.family': 'DejaVu Sans',
         'text.antialiased': True,
         'font.weight': 'normal'
     })
-
     i = 0
     for ax in axes.flat:
         if i < len(y_split):
-            sizes = y_split[i]["Value"].values
-            label = y_split[i]["Category"]
-            month_year = y_split[i]["Date"].dt.strftime('%B %Y').iloc[0]  # Get month and year
+            month = y_split[i]
+            sizes = month["Value"].values
+            label = month["Category"]
+            min_label_size = 1000
+            if label.iloc[0] == 'N/A':
+                title = month["Date"].dt.strftime('%B').iloc[0]
+                ax.text(0.5, 0.5, f'N/A\n{title}', fontsize=20, ha='center', va='center')
 
-            if label.iloc[0] == 'N/A':  # Check if the month has no data
-                ax.text(0.5, 0.5, f'N/A\n{month_year}', fontsize=20, ha='center', va='center')
             else:
+                font_sizes = np.clip(6 + (sizes / sizes.max()) * 4, 6, 10).astype(int)
+                text_labels = [f"{label.iloc[i]}" if sizes[i] > min_label_size else '' for i in range(len(label))]
+
                 sns.set_style(style="whitegrid")
-                squarify.plot(sizes=sizes, label=label, alpha=0.6, ax=ax,edgecolor='white', linewidth=1)
-                ax.set_title(f"{y_split[i]['Date'].dt.month_name().iloc[0]} {y_split[i]['Date'].dt.year.iloc[0]}", fontsize=12,
-                             fontweight='bold')
+                squarify.plot(sizes=sizes,
+                              label=text_labels,
+                              text_kwargs={'clip_on': True, 'fontsize': 8},
+                              alpha=0.6,
+                              ax=ax,
+                              edgecolor='white',
+                              linewidth=1, pad=True
+                              )
+                ax.set_title(f"{month['Date'].dt.month_name().iloc[0]}",
+                             fontsize=12,
+                             fontweight='bold',
+                             )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(True)
 
-
-            ax.axis('off')
-            i += 1
-
+        i += 1
     plt.savefig('output.pdf', dpi=100)
-
+    plt.close()
 
 
 main()
