@@ -17,6 +17,8 @@ def main():
 
     y = year_df(monthly_categories, 2024)
 
+
+
     fig, axes = plt.subplots(nrows=4,
                              ncols=3,
                              figsize=(25, 25),
@@ -77,11 +79,12 @@ def visualize(df, fig, axes):
                 squarify.plot(
                     sizes=sizes,
                     label=label,
-                    text_kwargs={'clip_on': False, 'fontsize': 14},
+                    text_kwargs={'clip_on': True, 'fontsize': 14},
                     alpha=.8,
                     edgecolor='white',
                     linewidth=1,
                     color=sns.husl_palette(n_colors=len(label), h=0.05, s=0.7, l=0.6),
+                    #pad=,
                     ax=ax,
                 )
                 fig.canvas.draw()
