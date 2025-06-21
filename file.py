@@ -93,33 +93,27 @@ def visualize(df, fig, axes):
 
                     txt.set_rotation(90 if rect_width < rect_height / 2 else 0 if rect_height < rect_width / 2 else txt.get_rotation())
 
-                    if (txt.get_window_extent().width <= rect_width * buffer_factor) and \
-                            (txt.get_window_extent().height <= rect_height * buffer_factor):
+                    txt.set_fontsize(14)
+                    fig.canvas.draw()
+                    if txt.get_window_extent().width <= rect_width * buffer_factor and txt.get_window_extent().height <= rect_height * buffer_factor:
                         continue
 
                     original = txt.get_text()
-                    found_fit = False
+                    txt_unfitted = True
 
-                    if len(original) > 4:
-                        for trunc_length in range(6, 3, -1):
-                            if trunc_length >= len(original):
-                                continue
-                            txt.set_text(original[:trunc_length] + '.')
-                            if (txt.get_window_extent().width <= rect_width * buffer_factor) and \
-                                    (txt.get_window_extent().height <= rect_height * buffer_factor):
-                                found_fit = True
-                                break
+                    for trunc_length, size in [(t, s) for t in [6, 5, 4, 3] for s in [14, 12, 10]]:
+                        if trunc_length >= len(original):
+                            continue
 
-                    if found_fit:
-                        continue
-
-                    for size in [12, 10]:
+                        txt.set_text(original[:trunc_length] + '.')
                         txt.set_fontsize(size)
-                        if (txt.get_window_extent().width <= rect_width * buffer_factor) and \
-                                (txt.get_window_extent().height <= rect_height * buffer_factor):
+                        fig.canvas.draw()
+
+                        if txt.get_window_extent().width <= rect_width * buffer_factor and txt.get_window_extent().height <= rect_height * buffer_factor:
+                            txt_unfitted = False
                             break
-                    else:
-                        txt.set_visible(False)
+
+                    txt.set_visible(not txt_unfitted)
 
         ax.set_xticks([])
         ax.set_yticks([])
