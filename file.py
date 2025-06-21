@@ -61,6 +61,7 @@ def visualize(df, fig, axes):
     for ax in axes.flat:
         if i < len(y_split):
             month = y_split[i]
+            month = month.sort_values('Value', ascending=True)
             sizes = month["Value"].values
             label = month["Category"]
             if label.iloc[0] == 'N/A':
@@ -71,6 +72,7 @@ def visualize(df, fig, axes):
                 min_label_size = 0.025 * sizes.max()
                 text_labels = [f"{label.iloc[i]}" if sizes[i] > min_label_size else '' for i in range(len(label))]
 
+
                 squarify.plot(
                      sizes=sizes,
                      label=text_labels,
@@ -79,6 +81,7 @@ def visualize(df, fig, axes):
                      edgecolor='white',
                      linewidth=1,
                      pad=True,
+                     #algorithm='row',
                      ax=ax,
                 )
                 ax.set_title(f"{month['Date'].dt.month_name().iloc[0]}",
