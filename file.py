@@ -85,7 +85,6 @@ def visualize(df, fig, axes):
                     ax=ax,
                 )
 
-
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
