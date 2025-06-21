@@ -15,7 +15,7 @@ def main():
     monthly_categories = monthly_categories.rename(columns={'Month': 'Date'})
     monthly_categories['Date'] = monthly_categories['Date'].dt.to_timestamp(how='start')
 
-    y = year_df(monthly_categories, 2025)
+    y = year_df(monthly_categories, 2024)
 
     fig, axes = plt.subplots(nrows=4,
                              ncols=3,
@@ -77,13 +77,49 @@ def visualize(df, fig, axes):
                 squarify.plot(
                     sizes=sizes,
                     label=label,
-                    text_kwargs={'clip_on': True, 'fontsize': 12},
+                    text_kwargs={'clip_on': False, 'fontsize': 14},
                     alpha=.8,
                     edgecolor='white',
                     linewidth=1,
                     color=sns.husl_palette(n_colors=len(label), h=0.05, s=0.7, l=0.6),
                     ax=ax,
                 )
+                fig.canvas.draw()
+
+                buffer_factor = 0.8
+                for txt, rect in zip(ax.texts, ax.patches):
+                    rect_ext = rect.get_window_extent()
+                    rect_width, rect_height = rect_ext.width, rect_ext.height
+
+                    txt.set_rotation(90 if rect_width < rect_height / 2 else 0 if rect_height < rect_width / 2 else txt.get_rotation())
+
+                    if (txt.get_window_extent().width <= rect_width * buffer_factor) and \
+                            (txt.get_window_extent().height <= rect_height * buffer_factor):
+                        continue
+
+                    original = txt.get_text()
+                    found_fit = False
+
+                    if len(original) > 4:
+                        for trunc_length in range(6, 3, -1):
+                            if trunc_length >= len(original):
+                                continue
+                            txt.set_text(original[:trunc_length] + '.')
+                            if (txt.get_window_extent().width <= rect_width * buffer_factor) and \
+                                    (txt.get_window_extent().height <= rect_height * buffer_factor):
+                                found_fit = True
+                                break
+
+                    if found_fit:
+                        continue
+
+                    for size in [12, 10]:
+                        txt.set_fontsize(size)
+                        if (txt.get_window_extent().width <= rect_width * buffer_factor) and \
+                                (txt.get_window_extent().height <= rect_height * buffer_factor):
+                            break
+                    else:
+                        txt.set_visible(False)
 
         ax.set_xticks([])
         ax.set_yticks([])
