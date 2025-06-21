@@ -7,7 +7,7 @@ from itertools import product
 
 
 def main():
-    df = pd.read_csv('data.csv')
+    df = pd.read_csv('sample.csv')
     df['Date'] = pd.to_datetime(df['Date'])
 
     df['Month'] = df['Date'].dt.to_period('M')
@@ -15,8 +15,7 @@ def main():
     monthly_categories = monthly_categories.rename(columns={'Month': 'Date'})
     monthly_categories['Date'] = monthly_categories['Date'].dt.to_timestamp(how='start')
 
-    y = year_df(monthly_categories, 2023)
-
+    y = year_df(monthly_categories, 2024)
     fig, axes = plt.subplots(nrows=4,
                              ncols=3,
                              figsize=(25, 25),
@@ -45,7 +44,7 @@ def visualize(df, fig, axes):
     sns.set_style(style="whitegrid")
     y_split = split_year(df)
     fig.subplots_adjust(top=0.95)
-    year = y_split[0]['Date'].dt.year.iloc[0]
+    year = df['Date'].dt.year.iloc[0]
     fig.suptitle(f'Personal finance ({year})', fontsize=35, y=.99)
     plt.rcParams.update({
         'font.family': 'DejaVu Sans',
@@ -118,7 +117,7 @@ def visualize(df, fig, axes):
         for spine in ax.spines.values():
             spine.set_visible(True)
         i += 1
-    plt.savefig('2023.png', dpi=500)
+    plt.savefig('output.png', dpi=500)
     plt.close()
 
 
